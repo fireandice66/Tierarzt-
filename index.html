@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 Tierarzt Bot – Live Test</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-deep: #1a5c2a;
+    --green-mid: #2d8a45;
+    --green-light: #4ab865;
+    --green-pale: #e8f5ec;
+    --green-ultra: #f2faf4;
+    --amber: #f59e0b;
+    --red-alert: #dc2626;
+    --text-dark: #1a2e1c;
+    --text-mid: #4a6b50;
+    --text-light: #8aab90;
+    --white: #ffffff;
+    --shadow: 0 20px 60px rgba(26,92,42,0.15);
+  }
+  @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pawPulse {
+    0%,100%{box-shadow:0 0 0 0 rgba(45,138,69,0.5)}
+    50%{box-shadow:0 0 0 10px transparent}
+  }
+  @keyframes shimmer {
+    0%{background-position:-200% center}
+    100%{background-position:200% center}
+  }
+  @keyframes wag { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    min-height:100vh;
+    background: radial-gradient(ellipse at 20% 20%, #c8ecd0 0%, #e8f5ec 40%, #d4edda 100%);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'DM Sans', sans-serif; padding:20px;
+  }
+
+  /* WRAPPER */
+  .wrapper { display:flex; gap:20px; align-items:flex-start; width:100%; max-width:960px; animation:slideUp 0.6s ease; }
+
+  /* SIDEBAR */
+  .sidebar { width:240px; flex-shrink:0; }
+  .sidebar-card { background:#fff; border-radius:20px; padding:20px; border:1px solid rgba(45,138,69,0.15); box-shadow:0 8px 30px rgba(26,92,42,0.1); margin-bottom:14px; }
+  .sidebar-title { font-size:11px; font-weight:700; color:var(--green-mid); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; }
+  .scene-btn { width:100%; background:var(--green-ultra); border:1.5px solid #c8e6cc; color:var(--text-dark); border-radius:10px; padding:10px 12px; font-size:12.5px; cursor:pointer; text-align:left; font-family:'DM Sans',sans-serif; margin-bottom:6px; transition:all 0.2s; display:flex; align-items:center; gap:8px; line-height:1.4; }
+  .scene-btn:hover { border-color:var(--green-mid); background:var(--green-pale); color:var(--green-deep); transform:translateX(2px); }
+  .scene-icon { font-size:16px; flex-shrink:0; }
+  .config-field { margin-bottom:8px; }
+  .config-label { font-size:10px; color:var(--text-mid); font-weight:600; margin-bottom:4px; display:block; text-transform:uppercase; letter-spacing:0.8px; }
+  .config-input { width:100%; padding:8px 10px; border:1.5px solid #c8e6cc; border-radius:8px; font-size:12px; font-family:'DM Sans',sans-serif; color:var(--text-dark); background:#fff; outline:none; }
+  .config-input:focus { border-color:var(--green-mid); }
+  .apply-btn { width:100%; background:var(--green-mid); color:#fff; border:none; border-radius:8px; padding:10px; font-size:12px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+  .apply-btn:hover { background:var(--green-deep); }
+  .status-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--green-pale); }
+  .status-row:last-child { border:none; }
+  .status-label { font-size:11px; color:var(--text-mid); }
+  .status-val { font-size:11px; font-weight:700; color:var(--green-mid); }
+  .status-dot { width:7px; height:7px; border-radius:50%; background:#22c55e; display:inline-block; margin-right:4px; }
+
+  /* CHAT */
+  .chat-wrap {
+    flex:1;
+    background:#fff;
+    border-radius:24px;
+    overflow:hidden;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    max-height:88vh;
+    border:1px solid rgba(45,138,69,0.12);
+  }
+
+  .header {
+    background:linear-gradient(135deg, var(--green-deep) 0%, var(--green-mid) 100%);
+    padding:20px 22px 16px;
+    display:flex; align-items:center; gap:14px;
+    position:relative; overflow:hidden;
+  }
+  .header::before {
+    content:'';
+    position:absolute; top:-20px; right:-20px;
+    width:100px; height:100px;
+    background:rgba(255,255,255,0.06);
+    border-radius:50%;
+  }
+  .header::after {
+    content:'🐾';
+    position:absolute; bottom:-10px; right:16px;
+    font-size:52px; opacity:0.08;
+    animation:wag 3s ease-in-out infinite;
+  }
+  .avatar-wrap { position:relative; }
+  .avatar {
+    width:56px; height:56px;
+    background:#fff; border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px;
+    animation:pawPulse 2.5s infinite;
+  }
+  .online { position:absolute; bottom:-2px; right:-2px; width:14px; height:14px; border-radius:50%; background:#4ade80; border:2.5px solid var(--green-deep); }
+  .header-info { flex:1; }
+  .header-name { color:#fff; font-weight:800; font-size:16px; font-family:'DM Serif Display',serif; }
+  .header-sub { color:rgba(255,255,255,0.65); font-size:11.5px; margin-top:2px; }
+  .header-pills { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .pill { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:rgba(255,255,255,0.9); border-radius:20px; padding:3px 10px; font-size:10px; font-weight:600; }
+  .pill.active { background:rgba(255,255,255,0.25); border-color:rgba(255,255,255,0.5); }
+
+  .subheader { background:rgba(26,92,42,0.9); padding:7px 22px; display:flex; justify-content:space-between; }
+  .sub-left { font-size:10px; color:rgba(255,255,255,0.7); font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+  .sub-right { font-size:10px; color:#86efac; font-weight:700; }
+
+  /* MESSAGES */
+  .messages {
+    flex:1; overflow-y:auto; padding:20px 18px 12px;
+    display:flex; flex-direction:column; gap:16px;
+    background:linear-gradient(180deg, #f8fdf9 0%, #f2faf4 100%);
+    min-height:300px; max-height:440px;
+  }
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:#b8d8be; border-radius:2px; }
+
+  .msg-wrap { display:flex; flex-direction:column; animation:fadeIn 0.3s ease; }
+  .msg-wrap.user { align-items:flex-end; }
+  .msg-wrap.bot { align-items:flex-start; }
+  .msg-row { display:flex; align-items:flex-end; gap:10px; }
+  .bot-av { width:30px; height:30px; border-radius:9px; background:var(--green-mid); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; box-shadow:0 2px 8px rgba(45,138,69,0.3); }
+  .msg-bubble { max-width:78%; padding:12px 16px; font-size:14px; line-height:1.65; word-break:break-word; }
+  .msg-bubble.user { background:var(--green-deep); color:#fff; border-radius:20px 20px 5px 20px; box-shadow:0 4px 15px rgba(26,92,42,0.25); }
+  .msg-bubble.bot { background:#fff; color:var(--text-dark); border-radius:20px 20px 20px 5px; border:1px solid #d8eedc; box-shadow:0 4px 15px rgba(26,92,42,0.06); }
+  .msg-time { color:var(--text-light); font-size:10px; margin-top:5px; padding:0 4px; }
+
+  /* QUICK BUTTONS */
+  .quick-wrap { margin-top:4px; }
+  .quick-label { color:var(--text-light); font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; padding-left:40px; }
+  .quick-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .qbtn {
+    background:#fff; border:1.5px solid #d0e8d5; color:var(--text-dark);
+    border-radius:12px; padding:10px 13px; font-size:12.5px; cursor:pointer;
+    text-align:left; font-family:'DM Sans',sans-serif; font-weight:500;
+    transition:all 0.2s; line-height:1.4;
+  }
+  .qbtn:hover { border-color:var(--green-mid); background:var(--green-pale); color:var(--green-deep); transform:translateY(-1px); box-shadow:0 4px 12px rgba(45,138,69,0.12); }
+  .qbtn .qi { font-size:15px; display:block; margin-bottom:3px; }
+
+  /* TYPING */
+  .typing-wrap { display:flex; align-items:flex-end; gap:10px; }
+  .typing { background:#fff; border:1px solid #d0e8d5; padding:14px 18px; border-radius:20px 20px 20px 5px; display:flex; gap:5px; align-items:center; box-shadow:0 4px 15px rgba(26,92,42,0.06); }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--green-mid); }
+  .dot:nth-child(1){animation:bounce 1.2s 0s infinite}
+  .dot:nth-child(2){animation:bounce 1.2s 0.2s infinite}
+  .dot:nth-child(3){animation:bounce 1.2s 0.4s infinite}
+
+  /* INLINE FORM */
+  .appt-form { background:var(--green-ultra); border:1.5px solid #c8e6cc; border-radius:16px; padding:18px; max-width:90%; margin-left:40px; }
+  .appt-title { font-size:13px; font-weight:700; color:var(--green-deep); margin-bottom:12px; font-family:'DM Serif Display',serif; }
+  .appt-in { width:100%; padding:9px 12px; border:1.5px solid #c8e6cc; border-radius:9px; font-size:12.5px; font-family:'DM Sans',sans-serif; outline:none; margin-bottom:8px; color:var(--text-dark); background:#fff; }
+  .appt-in:focus { border-color:var(--green-mid); }
+  .appt-sel { width:100%; padding:9px 12px; border:1.5px solid #c8e6cc; border-radius:9px; font-size:12.5px; font-family:'DM Sans',sans-serif; outline:none; margin-bottom:8px; color:var(--text-dark); background:#fff; }
+  .appt-submit { width:100%; background:var(--green-mid); color:#fff; border:none; border-radius:9px; padding:11px; font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+  .appt-ok { text-align:center; padding:12px; }
+  .appt-ok-icon { font-size:36px; }
+  .appt-ok-text { color:var(--green-deep); font-weight:700; font-size:14px; margin-top:8px; line-height:1.5; }
+
+  /* EMERGENCY BAR */
+  .emergency { background:#fff5f5; border-top:2px solid #fca5a5; padding:8px 18px; display:flex; align-items:center; gap:8px; }
+  .em-text { font-size:11px; color:var(--red-alert); font-weight:600; }
+  .em-link { color:var(--red-alert); font-weight:800; text-decoration:none; }
+
+  /* INPUT */
+  .input-area { padding:14px 18px; border-top:1px solid #e0f0e3; background:#fff; }
+  .input-box { display:flex; gap:8px; align-items:flex-end; background:var(--green-ultra); border:1.5px solid #c8e6cc; border-radius:16px; padding:10px 14px; }
+  textarea { flex:1; background:transparent; border:none; color:var(--text-dark); font-size:14px; outline:none; resize:none; line-height:1.5; font-family:'DM Sans',sans-serif; max-height:100px; min-height:24px; }
+  textarea::placeholder { color:var(--text-light); }
+  .send-btn { width:40px; height:40px; border-radius:12px; border:none; background:var(--green-mid); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .send-btn:hover { background:var(--green-deep); transform:scale(1.05); }
+  .footer-row { display:flex; justify-content:space-between; margin-top:8px; align-items:center; }
+  .footer-l { color:var(--text-light); font-size:10px; }
+  .dsgvo-badge { background:var(--green-pale); color:var(--green-mid); font-size:9px; font-weight:700; border-radius:5px; padding:2px 7px; }
+
+  /* MODAL */
+  .modal-ov { position:fixed; inset:0; background:rgba(0,30,10,0.7); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(8px); }
+  .modal { background:#fff; border:2px solid var(--green-mid); border-radius:22px; padding:36px; width:420px; max-width:92vw; max-height:90vh; overflow-y:auto; }
+  .modal-tag { color:var(--green-mid); font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; margin-bottom:6px; }
+  .modal-title { font-family:'DM Serif Display',serif; font-size:22px; color:var(--text-dark); margin-bottom:6px; }
+  .modal-sub { color:#666; font-size:13px; margin-bottom:22px; line-height:1.5; }
+  .modal-lbl { color:var(--text-mid); font-size:11px; font-weight:600; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.8px; }
+  .modal-in { width:100%; background:var(--green-ultra); border:1.5px solid #c8e6cc; border-radius:9px; padding:11px 14px; color:var(--text-dark); font-size:13.5px; outline:none; box-sizing:border-box; font-family:'DM Sans',sans-serif; margin-bottom:14px; }
+  .modal-sel { width:100%; background:var(--green-ultra); border:1.5px solid #c8e6cc; border-radius:9px; padding:11px 14px; color:var(--text-dark); font-size:13.5px; outline:none; box-sizing:border-box; font-family:'DM Sans',sans-serif; margin-bottom:14px; }
+  .modal-submit { width:100%; background:var(--green-mid); color:#fff; border:none; border-radius:11px; padding:15px; font-size:14px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+  .modal-submit:hover { background:var(--green-deep); }
+  .modal-cancel { width:100%; background:transparent; color:#aaa; border:none; padding:11px; font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif; }
+  .modal-ok { text-align:center; padding:12px 0; }
+  .modal-ok-icon { font-size:54px; margin-bottom:12px; }
+  .modal-ok-title { color:var(--green-mid); font-size:22px; font-weight:700; font-family:'DM Serif Display',serif; }
+  .modal-ok-sub { color:#666; margin-top:10px; font-size:13.5px; line-height:1.6; }
+
+  @media (max-width:700px) { .wrapper { flex-direction:column; } .sidebar { width:100%; } }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">🧪 Test-Szenarien</div>
+      <button class="scene-btn" onclick="scenario('Ich möchte einen Termin für meinen Hund Bello vereinbaren')"><span class="scene-icon">📅</span>Termin buchen</button>
+      <button class="scene-btn" onclick="scenario('Mein Hund frisst seit 2 Tagen nicht mehr, was soll ich tun?')"><span class="scene-icon">🤒</span>Hund frisst nicht</button>
+      <button class="scene-btn" onclick="scenario('Welche Impfungen braucht meine Katze?')"><span class="scene-icon">💉</span>Impfungen Katze</button>
+      <button class="scene-btn" onclick="scenario('Was kostet eine Kastration beim Hund?')"><span class="scene-icon">💶</span>Kosten anfragen</button>
+      <button class="scene-btn" onclick="scenario('Mein Kaninchen hat Krämpfe und ist bewusstlos!')"><span class="scene-icon">🚨</span>Notfall testen</button>
+      <button class="scene-btn" onclick="scenario('Wie alt sollte mein Hund für die erste Impfung sein?')"><span class="scene-icon">🐕</span>Impfalter Hund</button>
+      <button class="scene-btn" onclick="scenario('Meine Katze hat möglicherweise Gift gefressen')"><span class="scene-icon">☠️</span>Vergiftung</button>
+      <button class="scene-btn" onclick="scenario('Was sind Ihre Öffnungszeiten?')"><span class="scene-icon">🕐</span>Öffnungszeiten</button>
+      <button class="scene-btn" onclick="scenario('Bieten Sie auch Hausbesuche an?')"><span class="scene-icon">🏠</span>Hausbesuche</button>
+      <button class="scene-btn" onclick="scenario('Mein Hund wurde von einem Auto angefahren!')"><span class="scene-icon">🚗</span>Unfall-Notfall</button>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">⚙️ Praxis konfigurieren</div>
+      <div class="config-field">
+        <label class="config-label">API Key</label>
+        <input class="config-input" id="cfgKey" type="password" placeholder="sk-ant-..." />
+      </div>
+      <div class="config-field">
+        <label class="config-label">Praxisname</label>
+        <input class="config-input" id="cfgName" placeholder="Tierarztpraxis Dr. Meier" value="Tierarztpraxis Dr. Hoffmann" />
+      </div>
+      <div class="config-field">
+        <label class="config-label">Tierarzt</label>
+        <input class="config-input" id="cfgArzt" placeholder="Dr. Sarah Meier" value="Dr. Klaus Hoffmann" />
+      </div>
+      <div class="config-field">
+        <label class="config-label">Telefon</label>
+        <input class="config-input" id="cfgTel" placeholder="0911 123456" value="0911 44 55 66" />
+      </div>
+      <div class="config-field">
+        <label class="config-label">Tiere</label>
+        <input class="config-input" id="cfgTiere" placeholder="Hund, Katze..." value="Hund, Katze, Kaninchen, Kleintiere" />
+      </div>
+      <button class="apply-btn" onclick="applyConfig()">✅ Anwenden & neu starten</button>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">📊 Status</div>
+      <div class="status-row"><span class="status-label">KI-Status</span><span class="status-val" id="stAPI">⚪ Kein Key</span></div>
+      <div class="status-row"><span class="status-label">Nachrichten</span><span class="status-val" id="stMsgs">0</span></div>
+      <div class="status-row"><span class="status-label">Termin-Anfragen</span><span class="status-val" id="stAppt">0</span></div>
+      <div class="status-row"><span class="status-label">Notfälle erkannt</span><span class="status-val" id="stEmerg">0</span></div>
+    </div>
+
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-wrap">
+
+    <div class="header">
+      <div class="avatar-wrap">
+        <div class="avatar">🐾</div>
+        <div class="online"></div>
+      </div>
+      <div class="header-info">
+        <div class="header-name" id="hName">Tierarztpraxis Dr. Hoffmann</div>
+        <div class="header-sub" id="hSub">Dr. Klaus Hoffmann · Hund, Katze, Kleintiere</div>
+        <div class="header-pills">
+          <div class="pill active">● Online 24/7</div>
+          <div class="pill" id="hTel">📞 0911 44 55 66</div>
+        </div>
+      </div>
+    </div>
+    <div class="subheader">
+      <div class="sub-left">🐕 Hund · 🐈 Katze · 🐇 Kaninchen · 🐹 Kleintiere</div>
+      <div class="sub-right" id="hZeiten">Mo–Fr 8–18 · Sa 9–13 Uhr</div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="msg-wrap bot">
+        <div class="msg-row">
+          <div class="bot-av">🐾</div>
+          <div class="msg-bubble bot">Herzlich willkommen bei der Tierarztpraxis Dr. Hoffmann! 🐾 Ich bin Ihr digitaler Assistent und stehe Ihnen rund um die Uhr zur Verfügung — für Terminanfragen, Fragen zur Gesundheit Ihres Tieres und vieles mehr. Wie kann ich Ihnen und Ihrem Liebling helfen?</div>
+        </div>
+        <div class="msg-time" id="t0" style="margin-left:40px"></div>
+      </div>
+      <div class="quick-wrap" id="quickWrap">
+        <div class="quick-label">Was kann ich für Sie tun?</div>
+        <div class="quick-grid">
+          <button class="qbtn" onclick="sendMsg('Ich möchte einen Termin vereinbaren')"><span class="qi">📅</span>Termin buchen</button>
+          <button class="qbtn" onclick="sendMsg('Mein Tier ist krank')"><span class="qi">🤒</span>Tier ist krank</button>
+          <button class="qbtn" onclick="sendMsg('Was kostet eine Untersuchung?')"><span class="qi">💶</span>Kosten anfragen</button>
+          <button class="qbtn" onclick="sendMsg('Welche Impfungen braucht mein Hund?')"><span class="qi">💉</span>Impfinfos</button>
+          <button class="qbtn" onclick="sendMsg('Öffnungszeiten und Adresse?')"><span class="qi">🕐</span>Öffnungszeiten</button>
+          <button class="qbtn" onclick="sendMsg('NOTFALL – mein Tier braucht sofort Hilfe!')"><span class="qi">🚨</span>Notfall</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="emergency">
+      <span>🚨</span>
+      <span class="em-text">Tiernotfall? Sofort: <a class="em-link" href="tel:09114455667" id="emLink">0911 44 55 66 – 7</a> · auch nachts & am Wochenende!</span>
+    </div>
+
+    <div class="input-area">
+      <div class="input-box">
+        <textarea id="userIn" placeholder="Stellen Sie Ihre Frage zu Ihrem Tier..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMsg()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+        </button>
+      </div>
+      <div class="footer-row">
+        <span class="footer-l" id="footerName">© Tierarztpraxis Dr. Hoffmann · Nürnberg</span>
+        <span class="dsgvo-badge">🔒 DSGVO</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modal" style="display:none;">
+  <div class="modal">
+    <div id="modalContent">
+      <div class="modal-tag">📅 Terminanfrage</div>
+      <div class="modal-title">Termin vereinbaren</div>
+      <div class="modal-sub">Wir melden uns innerhalb von 24h telefonisch zur Bestätigung. Bitte bringen Sie den Impfpass Ihres Tieres mit.</div>
+      <div class="modal-lbl">Ihr Name (Tierhalter/in) *</div>
+      <input class="modal-in" id="mN" placeholder="Max Mustermann" />
+      <div class="modal-lbl">Telefon *</div>
+      <input class="modal-in" id="mT" type="tel" placeholder="0911 123456" />
+      <div class="modal-lbl">Name & Art des Tieres *</div>
+      <input class="modal-in" id="mTier" placeholder="z.B. Bello – Labrador, 4 Jahre" />
+      <div class="modal-lbl">Tierart *</div>
+      <select class="modal-sel" id="mTA">
+        <option value="">Bitte wählen...</option>
+        <option>🐕 Hund</option><option>🐈 Katze</option><option>🐇 Kaninchen</option>
+        <option>🐹 Hamster / Meerschweinchen</option><option>🦜 Vogel / Papagei</option>
+        <option>🦎 Reptil</option><option>🐠 Fisch</option><option>Sonstiges</option>
+      </select>
+      <div class="modal-lbl">Grund des Besuchs *</div>
+      <select class="modal-sel" id="mG">
+        <option value="">Bitte wählen...</option>
+        <option>Erstuntersuchung / Neues Tier</option>
+        <option>Krankenbesuch / Beschwerden</option>
+        <option>Impfung / Auffrischung</option>
+        <option>Vorsorge / Gesundheits-Check</option>
+        <option>Kastration / Sterilisation</option>
+        <option>Zahnbehandlung</option>
+        <option>Blutuntersuchung / Labor</option>
+        <option>Wundversorgung</option>
+        <option>Chip / Reisepass</option>
+        <option>Nachsorge / Kontrolle</option>
+        <option>Sonstiges</option>
+      </select>
+      <div class="modal-lbl">Tierkrankenversicherung vorhanden? *</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button type="button" id="mVersJa" onclick="toggleVers('ja','modal')" style="flex:1;padding:11px;border:1.5px solid #c8e6cc;border-radius:9px;background:#f2faf4;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:#1a5c2a;font-weight:600;transition:all 0.2s;">✅ Ja, versichert</button>
+        <button type="button" id="mVersNein" onclick="toggleVers('nein','modal')" style="flex:1;padding:11px;border:1.5px solid #c8e6cc;border-radius:9px;background:#f2faf4;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:#1a5c2a;font-weight:600;transition:all 0.2s;">❌ Nein</button>
+      </div>
+      <div id="mVersTypDiv" style="display:none;">
+        <div class="modal-lbl">Versicherungsart</div>
+        <select class="modal-sel" id="mVersTyp">
+          <option value="">Versicherungsart wählen...</option>
+          <option>🏥 OP-Versicherung</option>
+          <option>🩺 Kranken-Vollversicherung</option>
+          <option>💊 Kranken-Basisversicherung</option>
+          <option>🦷 Zahnversicherung</option>
+          <option>🔒 Haftpflichtversicherung (Hund)</option>
+          <option>📋 Sonstige Tierversicherung</option>
+        </select>
+      </div>
+      <div class="modal-lbl">Gewünschter Zeitraum</div>
+      <select class="modal-sel" id="mZ">
+        <option>So schnell wie möglich</option>
+        <option>Diese Woche</option><option>Nächste Woche</option>
+        <option>In 2–3 Wochen</option>
+        <option>Morgens (8–12 Uhr)</option><option>Nachmittags (12–18 Uhr)</option>
+      </select>
+      <button class="modal-submit" onclick="submitModal()">🐾 TERMINANFRAGE SENDEN</button>
+      <button class="modal-cancel" onclick="closeModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let PRAXIS = {
+  name:"Tierarztpraxis Dr. Hoffmann", arzt:"Dr. Klaus Hoffmann",
+  tiere:"Hund, Katze, Kaninchen, Kleintiere",
+  tel:"0911 44 55 66", notfall:"0911 44 55 66 - 7",
+  adresse:"Tiergartenstr. 12, 90480 Nürnberg",
+  zeiten:"Mo–Fr 8:00–18:00, Sa 9:00–13:00 Uhr",
+  leistungen:"Impfungen, Vorsorge, Operationen, Röntgen, Ultraschall, Zahnbehandlung, Chip & Reisepass, Blutbild, Notfallversorgung"
+};
+
+let apiKey = "";
+let history = [];
+let msgCount = 0, apptCount = 0, emergCount = 0;
+
+document.getElementById("t0").textContent = fmtTime();
+
+function fmtTime() { return new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); }
+function autoResize(el) { el.style.height="24px"; el.style.height=Math.min(el.scrollHeight,100)+"px"; }
+function handleKey(e) { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();} }
+function scenario(text) { document.getElementById("userIn").value=text; sendMsg(); }
+
+function updateStats() {
+  document.getElementById("stMsgs").textContent = msgCount;
+  document.getElementById("stAppt").textContent = apptCount;
+  document.getElementById("stEmerg").textContent = emergCount;
+}
+
+function applyConfig() {
+  const key = document.getElementById("cfgKey").value.trim();
+  const name = document.getElementById("cfgName").value.trim();
+  const arzt = document.getElementById("cfgArzt").value.trim();
+  const tel = document.getElementById("cfgTel").value.trim();
+  const tiere = document.getElementById("cfgTiere").value.trim();
+
+  if(key) { apiKey=key; document.getElementById("stAPI").textContent="🟢 Aktiv"; }
+  if(name) PRAXIS.name=name;
+  if(arzt) PRAXIS.arzt=arzt;
+  if(tel) { PRAXIS.tel=tel; document.getElementById("hTel").textContent="📞 "+tel; }
+  if(tiere) PRAXIS.tiere=tiere;
+
+  document.getElementById("hName").textContent = PRAXIS.name;
+  document.getElementById("hSub").textContent = PRAXIS.arzt+" · "+PRAXIS.tiere;
+  document.getElementById("footerName").textContent = "© "+PRAXIS.name;
+
+  clearMsgs();
+  history=[];
+  addBot(`Konfiguration aktualisiert! Willkommen bei ${PRAXIS.name}. 🐾 Ich bin Ihr digitaler Assistent — wie kann ich helfen?`);
+  showQuick();
+  alert("✅ Praxis konfiguriert! Bot wurde neu gestartet.");
+}
+
+function getSystem() {
+  return `Du bist der einfühlsame KI-Assistent der ${PRAXIS.name}.
+Tierarzt: ${PRAXIS.arzt} | Tiere: ${PRAXIS.tiere}
+Tel: ${PRAXIS.tel} | Notfall: ${PRAXIS.notfall}
+Adresse: ${PRAXIS.adresse} | Zeiten: ${PRAXIS.zeiten}
+Leistungen: ${PRAXIS.leistungen}
+
+Aufgaben: Terminanfragen entgegennehmen, Fragen zu Tiergesundheit beantworten (KEINE Diagnosen!), bei Notfällen sofort auf ${PRAXIS.notfall} hinweisen, Impfpläne und Kosten erklären.
+
+Regeln:
+- NIEMALS Diagnosen stellen — immer "Besuch in der Praxis empfohlen"
+- Notfall (Krämpfe, Atemnot, Vergiftung, Bewusstlosigkeit): SOFORT ${PRAXIS.notfall} empfehlen
+- Einfühlsam — Tierhalter sorgen sich um ihr Tier!
+- Auf Deutsch, max 3-4 Sätze
+- Bei Terminwunsch: "Ich öffne das Terminformular für Sie."`;
+}
+
+function clearMsgs() { document.getElementById("messages").innerHTML=""; }
+
+function showQuick() {
+  const m = document.getElementById("messages");
+  const w = document.createElement("div");
+  w.className="quick-wrap"; w.id="quickWrap";
+  w.innerHTML=`<div class="quick-label">Was kann ich für Sie tun?</div>
+  <div class="quick-grid">
+    <button class="qbtn" onclick="sendMsg('Ich möchte einen Termin vereinbaren')"><span class="qi">📅</span>Termin buchen</button>
+    <button class="qbtn" onclick="sendMsg('Mein Tier ist krank')"><span class="qi">🤒</span>Tier ist krank</button>
+    <button class="qbtn" onclick="sendMsg('Was kostet eine Untersuchung?')"><span class="qi">💶</span>Kosten</button>
+    <button class="qbtn" onclick="sendMsg('Welche Impfungen braucht mein Hund?')"><span class="qi">💉</span>Impfinfos</button>
+    <button class="qbtn" onclick="sendMsg('Öffnungszeiten?')"><span class="qi">🕐</span>Öffnungszeiten</button>
+    <button class="qbtn" onclick="sendMsg('NOTFALL!')"><span class="qi">🚨</span>Notfall</button>
+  </div>`;
+  m.appendChild(w);
+  m.scrollTop=m.scrollHeight;
+}
+
+function addBot(text, withForm=false) {
+  const m = document.getElementById("messages");
+  const w = document.createElement("div");
+  w.className="msg-wrap bot";
+  w.innerHTML=`<div class="msg-row"><div class="bot-av">🐾</div><div class="msg-bubble bot">${text}</div></div><div class="msg-time" style="margin-left:40px">${fmtTime()}</div>`;
+  m.appendChild(w);
+  if(withForm) {
+    const fw=document.createElement("div"); fw.className="msg-wrap bot";
+    fw.innerHTML=`<div class="appt-form">
+      <div class="appt-title">📅 Terminanfrage für Ihr Tier</div>
+      <input class="appt-in" id="inN" placeholder="Ihr Name *" />
+      <input class="appt-in" id="inT" type="tel" placeholder="Telefon *" />
+      <input class="appt-in" id="inTier" placeholder="Tier (Name & Art) *" />
+      <select class="appt-sel" id="inG">
+        <option value="">Grund *</option>
+        <option>Erstuntersuchung</option><option>Krankenbesuch</option>
+        <option>Impfung</option><option>Vorsorge</option>
+        <option>Kastration</option><option>Nachsorge</option><option>Sonstiges</option>
+      </select>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:11px;color:#4a6b50;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px;">Tierkrankenversicherung vorhanden?</div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="inVersJa" onclick="toggleVers('ja','inline')" style="flex:1;padding:8px;border:1.5px solid #c8e6cc;border-radius:9px;background:#fff;font-family:'DM Sans',sans-serif;font-size:12.5px;cursor:pointer;transition:all 0.2s;color:#1a5c2a;font-weight:600;">✅ Ja</button>
+          <button type="button" id="inVersNein" onclick="toggleVers('nein','inline')" style="flex:1;padding:8px;border:1.5px solid #c8e6cc;border-radius:9px;background:#fff;font-family:'DM Sans',sans-serif;font-size:12.5px;cursor:pointer;transition:all 0.2s;color:#1a5c2a;font-weight:600;">❌ Nein</button>
+        </div>
+      </div>
+      <div id="inVersTypDiv" style="display:none;margin-bottom:8px;">
+        <select class="appt-sel" id="inVersTyp">
+          <option value="">Versicherungsart wählen...</option>
+          <option>🏥 OP-Versicherung</option>
+          <option>🩺 Kranken-Vollversicherung</option>
+          <option>💊 Kranken-Basisversicherung</option>
+          <option>🦷 Zahnversicherung</option>
+          <option>🔒 Haftpflichtversicherung (Hund)</option>
+          <option>📋 Sonstige Tierversicherung</option>
+        </select>
+      </div>
+      <button class="appt-submit" onclick="submitInline()">🐾 Anfrage absenden</button>
+    </div>`;
+    m.appendChild(fw);
+    apptCount++; updateStats();
+  }
+  m.scrollTop=m.scrollHeight;
+}
+
+function addUser(text) {
+  const m=document.getElementById("messages");
+  const w=document.createElement("div"); w.className="msg-wrap user";
+  w.innerHTML=`<div class="msg-bubble user">${text}</div><div class="msg-time">${fmtTime()}</div>`;
+  m.appendChild(w); m.scrollTop=m.scrollHeight;
+}
+
+function showTyping() {
+  const m=document.getElementById("messages");
+  const w=document.createElement("div"); w.id="typing"; w.className="msg-wrap bot";
+  w.innerHTML=`<div class="typing-wrap"><div class="bot-av">🐾</div><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  m.appendChild(w); m.scrollTop=m.scrollHeight;
+}
+function hideTyping() { const t=document.getElementById("typing"); if(t) t.remove(); }
+
+async function sendMsg(txt) {
+  const input=document.getElementById("userIn");
+  const msg=txt||input.value.trim();
+  if(!msg) return;
+
+  const qw=document.getElementById("quickWrap"); if(qw) qw.remove();
+  input.value=""; input.style.height="24px";
+  addUser(msg);
+  history.push({role:"user",content:msg});
+  msgCount++; updateStats();
+  showTyping();
+
+  // Notfall
+  const notKeys=["notfall","krämpfe","atmet nicht","vergiftung","gift","bewusstlos","blutung","angefahren","unfall","stirbt","atemnot","schock"];
+  if(notKeys.some(k=>msg.toLowerCase().includes(k))) {
+    hideTyping();
+    addBot(`⚠️ Das klingt nach einem Notfall! Bitte rufen Sie <strong>sofort</strong> unsere Notfallnummer an: 📞 <strong>${PRAXIS.notfall}</strong> — Warten Sie nicht, jede Minute zählt!`);
+    history.push({role:"assistant",content:"Notfallhinweis."});
+    emergCount++; updateStats();
+    return;
+  }
+
+  // Termin ohne Key
+  const terminKeys=["termin","möchte kommen","wann kann","vereinbaren","buchen"];
+  if(terminKeys.some(k=>msg.toLowerCase().includes(k))&&!apiKey) {
+    hideTyping();
+    addBot("Ich öffne das Terminformular für Sie. Bitte füllen Sie es kurz aus — wir melden uns innerhalb von 24 Stunden zur Bestätigung! 🐾", true);
+    history.push({role:"assistant",content:"Terminformular gezeigt."});
+    return;
+  }
+
+  if(!apiKey) {
+    hideTyping();
+    addBot("⚙️ Bitte API Key links eingeben, um die volle KI zu aktivieren. Terminanfragen und Notfalldetektierung funktionieren bereits ohne Key! 🐾");
+    return;
+  }
+
+  try {
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:400,system:getSystem(),messages:history})
+    });
+    const d=await r.json();
+    hideTyping();
+    const reply=d.content?.[0]?.text||"Entschuldigung, keine Antwort erhalten.";
+    history.push({role:"assistant",content:reply});
+    const showForm=reply.toLowerCase().includes("terminformular")||(terminKeys.some(k=>msg.toLowerCase().includes(k)));
+    addBot(reply, showForm);
+  } catch(e) {
+    hideTyping();
+    addBot(`Verbindungsfehler. Bitte rufen Sie uns direkt an: 📞 ${PRAXIS.tel}`);
+  }
+}
+
+function submitInline() {
+  const n=document.getElementById("inN")?.value;
+  const t=document.getElementById("inT")?.value;
+  const tier=document.getElementById("inTier")?.value;
+  const g=document.getElementById("inG")?.value;
+  const versJa = document.getElementById("inVersJa")?.style.cssText?.includes('background:#1a5c2a');
+  const versTyp = document.getElementById("inVersTyp")?.value;
+  if(!n||!t||!tier||!g){alert("Bitte alle Pflichtfelder ausfüllen.");return;}
+  const versInfo = versJa ? (versTyp ? `(${versTyp})` : '(versichert)') : '(nicht versichert)';
+  document.querySelectorAll(".appt-form").forEach(f=>{
+    f.innerHTML=`<div class="appt-ok"><div class="appt-ok-icon">✅</div><div class="appt-ok-text">Danke ${n}!<br>Wir melden uns für <strong>${tier}</strong> unter ${t}.</div></div>`;
+  });
+  addBot(`Terminanfrage für ${tier} ${versInfo} erfolgreich übermittelt! 🐾 Wir melden uns bald unter ${t}. Bitte Impfpass mitbringen!`);
+  apptCount++; updateStats();
+}
+
+function toggleVers(val, ctx) {
+  const isInline = ctx === 'inline';
+  const jaBtn = document.getElementById(isInline ? 'inVersJa' : 'mVersJa');
+  const neinBtn = document.getElementById(isInline ? 'inVersNein' : 'mVersNein');
+  const typDiv = document.getElementById(isInline ? 'inVersTypDiv' : 'mVersTypDiv');
+  if (!jaBtn || !neinBtn || !typDiv) return;
+
+  const activeStyle = 'background:#1a5c2a;color:#fff;border-color:#1a5c2a;';
+  const inactiveStyle = 'background:#f2faf4;color:#1a5c2a;border-color:#c8e6cc;';
+
+  if (val === 'ja') {
+    jaBtn.style.cssText += activeStyle;
+    neinBtn.style.cssText += inactiveStyle;
+    typDiv.style.display = 'block';
+  } else {
+    neinBtn.style.cssText += activeStyle;
+    jaBtn.style.cssText += inactiveStyle;
+    typDiv.style.display = 'none';
+  }
+}
+
+function openModal(){document.getElementById("modal").style.display="flex";}
+function closeModal(){document.getElementById("modal").style.display="none";}
+
+function submitModal() {
+  const n=document.getElementById("mN").value;
+  const t=document.getElementById("mT").value;
+  const tier=document.getElementById("mTier").value;
+  const g=document.getElementById("mG").value;
+  if(!n||!t||!tier||!g){alert("Pflichtfelder ausfüllen.");return;}
+  const versJa = document.getElementById("mVersJa")?.style.cssText?.includes('background:#1a5c2a');
+  const versTyp = document.getElementById("mVersTyp")?.value;
+  const versInfo = versJa ? (versTyp || 'Versichert') : 'Nicht versichert';
+  document.getElementById("modalContent").innerHTML=`
+    <div class="modal-ok">
+      <div class="modal-ok-icon">🐾</div>
+      <div class="modal-ok-title">Terminanfrage erhalten!</div>
+      <div class="modal-ok-sub">Vielen Dank, <strong>${n}</strong>!<br>Wir melden uns für <strong>${tier}</strong> unter <strong>${t}</strong>.<br>🔒 Versicherung: ${versInfo}<br><br>📋 Bitte Impfpass mitbringen!</div>
+    </div>`;
+  setTimeout(()=>{closeModal(); addBot(`Super! Terminanfrage für ${tier} ist eingegangen. Versicherung: ${versInfo}. Wir melden uns unter ${t}. Bis bald! 🐾`); apptCount++;updateStats();},2500);
+}
+
+document.getElementById("modal").addEventListener("click",function(e){if(e.target===this)closeModal();});
+</script>
+</body>
+</html>
